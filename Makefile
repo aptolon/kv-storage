@@ -1,0 +1,3 @@
+export
+run_tests:
+	@go test ./...
