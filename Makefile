@@ -1,3 +1,5 @@
-export
+
+.PHONY: run_tests
+
 run_tests:
-	@go test ./...
+	@go test ./... -race
