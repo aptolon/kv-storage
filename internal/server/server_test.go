@@ -41,9 +41,9 @@ func TestHandleCommandGet(t *testing.T) {
 	s.storage.Set(key, value)
 
 	resp := s.handleCommand("GET " + key)
-	gotResp := "VALUE " + string(value)
-	if resp != gotResp {
-		t.Fatalf("expected %q, got %q", resp, gotResp)
+	expectedResp := "VALUE " + string(value)
+	if resp != expectedResp {
+		t.Fatalf("expected %q, got %q", expectedResp, resp)
 	}
 }
 
@@ -56,9 +56,9 @@ func TestHandleCommandDel(t *testing.T) {
 	s.storage.Set(key, value)
 
 	resp := s.handleCommand("DEL " + key)
-	gotResp := "OK"
-	if resp != gotResp {
-		t.Fatalf("expected %q, got %q", resp, gotResp)
+	expectedResp := "OK"
+	if resp != expectedResp {
+		t.Fatalf("expected %q, got %q", expectedResp, resp)
 	}
 
 	val, _ := s.storage.Get(key)
@@ -73,9 +73,9 @@ func TestHandleCommandGetMissingKey(t *testing.T) {
 	key := "123"
 
 	resp := s.handleCommand("GET " + key)
-	gotResp := "NULL"
-	if resp != gotResp {
-		t.Fatalf("expected %q, got %q", resp, gotResp)
+	expectedResp := "NULL"
+	if resp != expectedResp {
+		t.Fatalf("expected %q, got %q", expectedResp, resp)
 	}
 }
 

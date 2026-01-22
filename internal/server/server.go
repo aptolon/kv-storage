@@ -21,9 +21,10 @@ func NewServer(addr string, storage storage.Storage) *Server {
 	return &Server{
 		addr:    addr,
 		storage: storage,
-		ready:   make(chan string),
+		ready:   make(chan string, 1),
 	}
 }
+
 func (s *Server) Start(ctx context.Context) error {
 	listener, err := net.Listen("tcp", s.addr)
 	if err != nil {
@@ -64,9 +65,6 @@ func (s *Server) handleConn(conn net.Conn) {
 			return
 		}
 		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
 		resp := s.handleCommand(line)
 		writer.WriteString(resp + "\n")
 		writer.Flush()
