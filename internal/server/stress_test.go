@@ -15,8 +15,8 @@ import (
 func TestTCPStressSingleConnection(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
-
-	store := storage.NewMemoryStorage()
+	data := make(map[string][]byte)
+	store := storage.NewMemoryStorage(data)
 	srv := NewServer(":0", store)
 
 	go func() {
@@ -73,7 +73,8 @@ func TestTCPStressConcurrentClients(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 
-	store := storage.NewMemoryStorage()
+	data := make(map[string][]byte)
+	store := storage.NewMemoryStorage(data)
 	srv := NewServer(":0", store)
 
 	go func() {

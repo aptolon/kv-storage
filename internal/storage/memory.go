@@ -9,9 +9,15 @@ type MemoryStorage struct {
 	data map[string][]byte
 }
 
-func NewMemoryStorage() *MemoryStorage {
+func NewMemoryStorage(data map[string][]byte) *MemoryStorage {
+	res := make(map[string][]byte, len(data))
+	for k, v := range data {
+		cpy := make([]byte, len(v))
+		copy(cpy, v)
+		res[k] = cpy
+	}
 	return &MemoryStorage{
-		data: make(map[string][]byte),
+		data: res,
 	}
 }
 
@@ -41,4 +47,17 @@ func (s *MemoryStorage) Delete(key string) error {
 	defer s.mu.Unlock()
 	delete(s.data, key)
 	return nil
+}
+
+func (s *MemoryStorage) Snapshot() map[string][]byte {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	res := make(map[string][]byte, len(s.data))
+	for k, v := range s.data {
+		cpy := make([]byte, len(v))
+		copy(cpy, v)
+		res[k] = cpy
+	}
+	return res
 }

@@ -14,8 +14,8 @@ import (
 
 func TestTCPSetGet(t *testing.T) {
 	ctx := t.Context()
-
-	store := storage.NewMemoryStorage()
+	data := make(map[string][]byte)
+	store := storage.NewMemoryStorage(data)
 	srv := NewServer(":0", store)
 
 	go func() {
@@ -67,7 +67,8 @@ func TestTCPSetGet(t *testing.T) {
 func TestTCPGetMissingKey(t *testing.T) {
 	ctx := t.Context()
 
-	store := storage.NewMemoryStorage()
+	data := make(map[string][]byte)
+	store := storage.NewMemoryStorage(data)
 	srv := NewServer(":0", store)
 
 	go func() {
@@ -109,7 +110,8 @@ func TestTCPGetMissingKey(t *testing.T) {
 func TestTCPInvalidCommand(t *testing.T) {
 	ctx := t.Context()
 
-	store := storage.NewMemoryStorage()
+	data := make(map[string][]byte)
+	store := storage.NewMemoryStorage(data)
 	srv := NewServer(":0", store)
 
 	go func() {
@@ -160,7 +162,8 @@ func TestTCPInvalidCommand(t *testing.T) {
 func TestTCPMultiCommand(t *testing.T) {
 	ctx := t.Context()
 
-	store := storage.NewMemoryStorage()
+	data := make(map[string][]byte)
+	store := storage.NewMemoryStorage(data)
 	srv := NewServer(":0", store)
 
 	go func() {
@@ -235,7 +238,8 @@ func TestTCPGracefulShutdown(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 
-	store := storage.NewMemoryStorage()
+	data := make(map[string][]byte)
+	store := storage.NewMemoryStorage(data)
 	srv := NewServer(":0", store)
 
 	serverErr := make(chan error, 1)

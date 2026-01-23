@@ -1,3 +1,5 @@
+include .env
+export
 
 .PHONY: run_tests
 

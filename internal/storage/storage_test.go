@@ -6,7 +6,8 @@ import (
 )
 
 func newTestStorage() Storage {
-	return NewMemoryStorage()
+	data := make(map[string][]byte)
+	return NewMemoryStorage(data)
 }
 
 func TestStorageSetGet(t *testing.T) {

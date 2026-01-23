@@ -9,9 +9,11 @@ import (
 )
 
 func newTestServer() *Server {
+	data := make(map[string][]byte)
 	return NewServer(
 		":0",
-		storage.NewMemoryStorage(),
+
+		storage.NewMemoryStorage(data),
 	)
 }
 func TestHandleCommandSet(t *testing.T) {
