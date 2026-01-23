@@ -7,14 +7,17 @@ import (
 	"log"
 	"net"
 	"strings"
+	"sync"
 
 	"github.com/aptolon/kv-store/internal/storage"
 )
 
 type Server struct {
-	addr    string
-	storage storage.Storage
-	ready   chan string
+	addr     string
+	storage  storage.Storage
+	listener net.Listener
+	ready    chan string
+	wg       *sync.WaitGroup
 }
 
 func NewServer(addr string, storage storage.Storage) *Server {
@@ -22,52 +25,62 @@ func NewServer(addr string, storage storage.Storage) *Server {
 		addr:    addr,
 		storage: storage,
 		ready:   make(chan string, 1),
+		wg:      &sync.WaitGroup{},
 	}
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	listener, err := net.Listen("tcp", s.addr)
+	var err error
+	s.listener, err = net.Listen("tcp", s.addr)
 	if err != nil {
 		return err
 	}
-	defer listener.Close()
+	defer s.listener.Close()
 
-	s.ready <- listener.Addr().String()
+	s.ready <- s.listener.Addr().String()
 
 	log.Printf("server started on port %s", s.addr)
+
+	go func() {
+		<-ctx.Done()
+		log.Println("server stopped gracefully")
+		s.listener.Close()
+	}()
+
 	for {
-		select {
-		case <-ctx.Done():
+		conn, err := s.listener.Accept()
+		if err != nil {
 			return nil
-		default:
-			conn, err := listener.Accept()
-			if err != nil {
-				continue
-			}
-			go s.handleConn(conn)
 		}
+		s.wg.Add(1)
+		go s.handleConn(ctx, conn)
 	}
 }
 
-func (s *Server) handleConn(conn net.Conn) {
+func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 	log.Printf("client connected on port %s", s.addr)
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
 	for {
-		line, err := reader.ReadString('\n')
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			line, err := reader.ReadString('\n')
 
-		if err == io.EOF {
-			return
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			line = strings.TrimSpace(line)
+			resp := s.handleCommand(line)
+			writer.WriteString(resp + "\n")
+			writer.Flush()
 		}
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		line = strings.TrimSpace(line)
-		resp := s.handleCommand(line)
-		writer.WriteString(resp + "\n")
-		writer.Flush()
 	}
 }
 

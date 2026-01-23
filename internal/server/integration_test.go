@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"net"
 	"strings"
@@ -228,4 +229,60 @@ func TestTCPMultiCommand(t *testing.T) {
 		t.Fatalf("expected %q, got %q", expectedResp, resp)
 	}
 
+}
+
+func TestTCPGracefulShutdown(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+
+	store := storage.NewMemoryStorage()
+	srv := NewServer(":0", store)
+
+	serverErr := make(chan error, 1)
+
+	go func() {
+		serverErr <- srv.Start(ctx)
+	}()
+
+	var addr string
+	select {
+	case addr = <-srv.ready:
+	case <-time.After(time.Second):
+		t.Fatalf("server didn't start")
+	}
+
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		t.Fatalf("failed to connect: %v", err)
+	}
+
+	reader := bufio.NewReader(conn)
+	writer := bufio.NewWriter(conn)
+	key := "123"
+	value := "456"
+
+	// SET
+	fmt.Fprintf(writer, "SET %s %s\n", key, value)
+	writer.Flush()
+
+	resp, _ := reader.ReadString('\n')
+	expectedResp := "OK\n"
+	if resp != expectedResp {
+		t.Fatalf("expected %q, got %q", expectedResp, resp)
+	}
+	cancel()
+
+	select {
+	case err := <-serverErr:
+		if err != nil && err != context.Canceled {
+			t.Fatalf("server returned error: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatalf("server didn't shutdown")
+	}
+
+	_, err = net.DialTimeout("tcp", addr, 200*time.Millisecond)
+	if err == nil {
+		t.Fatalf("expected connection отказ после shutdown")
+	}
 }

@@ -6,18 +6,18 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/aptolon/kv-store/internal/server"
 	"github.com/aptolon/kv-store/internal/storage"
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
 	defer cancel()
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 	store := storage.NewMemoryStorage()
 	serv := server.NewServer(":8080", store)
@@ -28,8 +28,6 @@ func main() {
 		}
 	}()
 
-	<-sigCh
+	<-ctx.Done()
 	log.Println("shutdown signal received")
-	time.Sleep(time.Second)
-
 }
