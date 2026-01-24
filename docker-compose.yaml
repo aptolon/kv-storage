@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:18-bookworm
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    container_name: kv-postgres
+    
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./out/postgres:/var/lib/postgresql
+
+  server:
+    build: .
+    container_name: kv-server
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      SERV_PORT: ${SERV_PORT}
+    ports:
+      - "8080:8080"

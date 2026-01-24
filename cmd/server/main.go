@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/aptolon/kv-store/internal/persistence"
 	"github.com/aptolon/kv-store/internal/server"
@@ -28,8 +29,18 @@ func main() {
 	}
 	conn, err := pgx.Connect(ctx, db)
 
+	for i := 1; i <= 15; i++ {
+		conn, err = pgx.Connect(ctx, db)
+		if err == nil {
+			break
+		}
+
+		log.Printf("waiting for postgres (%d/15): %v", i, err)
+		time.Sleep(1 * time.Second)
+	}
+
 	if err != nil {
-		log.Fatalf("postgres connect error: %v", err)
+		log.Fatalf("postgres not available: %v", err)
 	}
 	defer conn.Close(ctx)
 
